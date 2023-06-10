@@ -2,6 +2,29 @@
 
 This repository contains Terraform configuration files to create a Kubernetes cluster on AWS. The cluster is provisioned using Terraform, and it leverages AWS services for infrastructure management.
 
+
+```mermaid
+flowchart LR
+    subgraph Border
+        subgraph AWS["<i class='fab fa-aws' style='font-size:25px;margin-top:5px;color:#FF8C00;'></i>"]
+            s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i>"]
+        end
+    end
+
+%% Defining Class Styles
+classDef Border fill:#fff,stroke:#fff,stroke-width:4px,color:#fff,stroke-dasharray: 5 5;
+classDef AWS fill:transparent,stroke:#FF8C00,stroke-width:2px,color:#000,stroke-dasharray: 8 4;
+classDef S3Icon margin:0px, stroke-width:1px, padding:0px, fill:#aaf0d1, position:absolute, bottom:0px, right:0px, stroke:green, stroke-dasharray: 5 5, rx:5px, ry:5px, color:#004225;
+
+%% Custom Styles
+
+%% Assigning Nodes to Classes
+class Border Border;
+class AWS AWS;
+class s3-bucket S3Icon;
+```
+
+
 ## Infra-prin Container
 
 The `infra-prin` container is used in this repository to provide the necessary tools for managing the Kubernetes cluster. It comes pre-installed with `kubectl`, AWS CLI, and other utilities needed to interact with the cluster.
