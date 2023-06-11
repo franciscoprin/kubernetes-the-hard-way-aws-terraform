@@ -2,6 +2,9 @@
 
 # HELPER FUNCTIONS:
 
+# Include the function to be tested
+source setup-kube-encryption-key.sh
+
 # get flag value in command:
 parse_options() {
   local flag_name="$1"
@@ -165,20 +168,19 @@ test_new_encryption_key_is_created_when_it_has_expired() {
   # An experied key should fully the following enequality:
   #   mock_newest_modified_date < mock_now - expired_delta_seconds
   mock_newest_modified_date="2022-03-10T12:30:45Z"
-  mock_now="2022-03-10T12:30:45Z"
-  expired_delta_seconds=10 # seconds
+  mock_now="2022-03-10T12:31:45Z"
+  expired_delta_seconds=45 # seconds
 
   # if above conditions are meet a new_encryption_key will be created:
   mock_new_encryption_key="NewMockEncryptionKey"
 
-
   # Run tested function:
   expected_result="{\"encryption_key\": \"$mock_new_encryption_key\"}"
-  actual_result=$(. ./setup-kube-encryption-key.sh)
+  actual_result=$(main)
 
   # Assert expected results:
   assertEquals "$expected_result" "$actual_result"
-  assertNull " mock_encryption_key is not set" "$mock_encryption_key"
+  assertNotNull " mock_encryption_key is not set: $mock_encryption_key" "$mock_encryption_key"
 }
 
 test_new_encryption_key_is_created_when_it_is_unset_in_ssm() {
@@ -197,11 +199,11 @@ test_new_encryption_key_is_created_when_it_is_unset_in_ssm() {
 
   # Run tested function:
   expected_result="{\"encryption_key\": \"$mock_new_encryption_key\"}"
-  actual_result=$(. ./setup-kube-encryption-key.sh)
+  actual_result=$(main)
 
   # Assert expected results:
   assertEquals "$expected_result" "$actual_result"
-  assertNull " mock_encryption_key is not set" "$mock_encryption_key"
+  assertNull " mock_encryption_key is set" "$mock_encryption_key"
 }
 
 test_non_encryption_key_recreation_when_it_is_uptodate_and_set_in_ssm() {
@@ -220,11 +222,66 @@ test_non_encryption_key_recreation_when_it_is_uptodate_and_set_in_ssm() {
 
   # Run tested function:
   expected_result="{\"encryption_key\": \"$mock_encryption_key\"}"
-  actual_result=$(. ./setup-kube-encryption-key.sh)
+  actual_result=$(main)
 
   # Assert expected results:
   assertEquals "$expected_result" "$actual_result"
-  assertNotNull "mock_encryption_key is not set" "$mock_encryption_key"
+  assertNotNull " mock_encryption_key is not set" "$mock_encryption_key"
+}
+
+test_ensure_environment_variables_exist(){
+  unset bucket_name
+  export s3_prefix_path="."
+  export newest_modified_date="."
+  export expired_delta_seconds="."
+
+  expected_result="Error: bucket_name is not set."
+  actual_result=$(bash ./setup-kube-encryption-key.sh)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
+
+  ###
+  ###
+
+  export bucket_name="bucket_name"
+  unset s3_prefix_path
+  export newest_modified_date="."
+  export expired_delta_seconds="."
+
+  expected_result="Error: s3_prefix_path is not set."
+  actual_result=$(bash ./setup-kube-encryption-key.sh)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
+
+  ###
+  ###
+
+  export bucket_name="."
+  export s3_prefix_path="."
+  unset newest_modified_date
+  export expired_delta_seconds="."
+
+  expected_result="Error: newest_modified_date is not set."
+  actual_result=$(bash ./setup-kube-encryption-key.sh)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
+
+  ###
+  ###
+
+  export bucket_name="."
+  export s3_prefix_path="."
+  export newest_modified_date="."
+  unset expired_delta_seconds
+
+  expected_result="Error: expired_delta_seconds is not set."
+  actual_result=$(bash ./setup-kube-encryption-key.sh)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
 }
 
 setUp() {
@@ -232,10 +289,13 @@ setUp() {
   # unless the expand_aliases shell option is set using shopt:
   shopt -s expand_aliases
 
-  # Setup test:
+  # Mock commands and functions:
   alias aws='mock_aws'
   alias date='mock_date'
   alias base64='mock_base64'
+  function check_variables() {
+    :
+  }
 
   # Required local:
   local mock_now
@@ -260,6 +320,10 @@ tearDown() {
   unset expected_result
   unset mock_encryption_key
   unset mock_new_encryption_key
+  unset bucket_name
+  unset s3_prefix_path
+  unset newest_modified_date
+  unset expired_delta_seconds
 
   # Reset aliases expandtion when the shell is not interactive.
   shopt -u expand_aliases
