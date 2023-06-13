@@ -8,19 +8,19 @@ check_variables() {
   for var_name in "$@"; do
       if [[ -z "${!var_name}" ]]; then
           echo "Error: $var_name is not set."
-          return 1
+          exit 1
       fi
   done
-  return 0
 }
 
 function main() {
   # TODO: uncomment `check_variables` line below:
-  check_variables "bucket_name" "s3_prefix_path" "newest_modified_date" "expired_delta_seconds" || exit 1
+  check_variables "bucket_name" "s3_prefix_path" "expired_delta_seconds" || exit 1
 
   # Get the newest file's mofidication date from S3 bucket.
-  newest_modified_date=$(aws s3api list-objects-v2 --bucket $bucket_name --prefix $s3_prefix_path --query 'sort_by(Contents, &LastModified)[0].LastModified' --output text)
-  newest_file_was_modified_date=$(date -d $newest_modified_date +%s)
+  newest_modified_date=$(aws s3api list-objects-v2 --bucket $bucket_name --prefix $s3_prefix_path --query 'sort_by(Contents, &LastModified)[0].LastModified' --output text 2>/dev/null || echo "")
+
+  newest_file_was_modified_date=$(date -d $newest_modified_date +%s 2>/dev/null || echo "999999999999")
   expiration_threshold=$(date -d "-$expired_delta_seconds seconds" +%s)
 
   # Trying to retrieve the encryption key from SSM

@@ -71,7 +71,7 @@ mock_aws_ssm_get_parameter() {
   local name_flag_value=$(parse_options "--name" "$@")
 
   if [[ "$name_flag_value" != "/k8s-the-hard-way/encryption_key" ]]; then
-    echo "Error: Invalid parameter path"
+    echo "Error: Invalid parameter path" >&2  # Redirect error message to stderr
     exit 1
   fi
 
@@ -84,13 +84,13 @@ mock_aws_s3api_list_objects(){
   local query_flag_value=$(parse_options "--query" "$@")
 
   if [[ "$query_flag_value" != "sort_by(Contents, &LastModified)[0].LastModified" ]]; then
-    echo "Error: Invalid parameter query"
-    exit 0
+    echo "Error: Invalid parameter query" >&2  # Redirect error message to stderr
+    exit 1
   fi
 
   # Check if the global variable mock_newest_modified_date is set
   if [[ -z $mock_newest_modified_date ]]; then
-    echo "Error: mock_newest_modified_date is not set"
+    echo "Error: mock_newest_modified_date is not set" >&2  # Redirect error message to stderr
     exit 1
   fi
 
@@ -123,15 +123,13 @@ mock_aws() {
     exit 0
   fi
 
-  # The `command`` keyword is used to run a command without executing any function or alias with the same name.
+  # The `command` keyword is used to run a command without executing any function or alias with the same name.
   # This is done to ensure that the mock function does not call itself recursively.
   command aws "$@"
 }
 
 # - mock data command:
 mock_date() {
-  local result
-
   local date_flag_value=$(parse_options "-d" "$@")
 
   # If the data commands look similar to `data -d "-20 days" +%s`, rather than substracting the current time, use a mock_now instead.
@@ -139,13 +137,11 @@ mock_date() {
     local new_args=$(replace_flag_value "-d" "\"$mock_now $date_flag_value\"" "$@")
 
     # `eval` helps to preserve quotes around each element, for instance: "-20 days"
-    result=$(eval "command date ${new_args[*]}")
-    echo $result
-    exit 0
+    eval "command date ${new_args[*]}"
+    return
   fi
 
-  result=$(command date "$@")
-  echo $result
+  command date "$@"
 }
 
 # - mock base64 command:
@@ -232,7 +228,6 @@ test_non_encryption_key_recreation_when_it_is_uptodate_and_set_in_ssm() {
 test_ensure_environment_variables_exist(){
   unset bucket_name
   export s3_prefix_path="."
-  export newest_modified_date="."
   export expired_delta_seconds="."
 
   expected_result="Error: bucket_name is not set."
@@ -246,7 +241,6 @@ test_ensure_environment_variables_exist(){
 
   export bucket_name="bucket_name"
   unset s3_prefix_path
-  export newest_modified_date="."
   export expired_delta_seconds="."
 
   expected_result="Error: s3_prefix_path is not set."
@@ -260,21 +254,6 @@ test_ensure_environment_variables_exist(){
 
   export bucket_name="."
   export s3_prefix_path="."
-  unset newest_modified_date
-  export expired_delta_seconds="."
-
-  expected_result="Error: newest_modified_date is not set."
-  actual_result=$(bash ./setup-kube-encryption-key.sh)
-
-  # Assert expected results:
-  assertEquals "$expected_result" "$actual_result"
-
-  ###
-  ###
-
-  export bucket_name="."
-  export s3_prefix_path="."
-  export newest_modified_date="."
   unset expired_delta_seconds
 
   expected_result="Error: expired_delta_seconds is not set."
@@ -282,6 +261,64 @@ test_ensure_environment_variables_exist(){
 
   # Assert expected results:
   assertEquals "$expected_result" "$actual_result"
+}
+
+test_new_encryption_key_is_created_when_empty_s3_bucket_and_it_is_unset_in_ssm() {
+  # When the s3 bucket is empty, the command `aws s3api list-objects-v2` will fail.
+  # To simulate that error the `mock_newest_modified_date` variale is unset.
+  # In this case `mock_newest_modified_date` will be set with infity that is equivalent to 999999999999
+  # So the encryption_key shouldn't be recreated.
+  unset mock_newest_modified_date
+
+  # The encryption_key wasn't created and stored in SSM.
+  unset mock_encryption_key
+
+  # and it is uptodate.
+  # An experied key should fully the following enequality:
+  #   mock_newest_modified_date < mock_now - expired_delta_seconds
+  mock_now="2022-03-10T12:30:45Z"
+  expired_delta_seconds=86400 # 20 days in seconds
+
+  # if above conditions are meet no new_encryption_key will be created:
+  mock_new_encryption_key="NewMockEncryptionKey4"
+
+  # Run tested function:
+  expected_result="{\"encryption_key\": \"$mock_new_encryption_key\"}"
+  actual_result=$(main)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
+  assertNull " mock_newest_modified_date is set" "$mock_newest_modified_date"
+  assertNull " mock_encryption_key is set" "$mock_encryption_key"
+}
+
+test_non_entryption_key_recreation_when_empty_s3_bucket_and_set_in_ssm() {
+  # When the s3 bucket is empty, the command `aws s3api list-objects-v2` will fail.
+  # To simulate that error the `mock_newest_modified_date` variale is unset.
+  # In this case `mock_newest_modified_date` will be set with infity that is equivalent to 999999999999
+  # So the encryption_key shouldn't be recreated.
+  unset mock_newest_modified_date
+
+  # The encryption_key was already created and stored in SSM,
+  mock_encryption_key="MockEncryptionKey4"
+
+  # and it is uptodate.
+  # An experied key should fully the following enequality:
+  #   mock_newest_modified_date < mock_now - expired_delta_seconds
+  mock_now="2022-03-10T12:30:45Z"
+  expired_delta_seconds=86400 # 20 days in seconds
+
+  # if above conditions are meet no new_encryption_key will be created:
+  mock_new_encryption_key="NewMockEncryptionKey4"
+
+  # Run tested function:
+  expected_result="{\"encryption_key\": \"$mock_encryption_key\"}"
+  actual_result=$(main)
+
+  # Assert expected results:
+  assertEquals "$expected_result" "$actual_result"
+  assertNull " mock_newest_modified_date is set" "$mock_newest_modified_date"
+  assertNotNull " mock_encryption_key is not set" "$mock_encryption_key"
 }
 
 setUp() {
@@ -322,7 +359,6 @@ tearDown() {
   unset mock_new_encryption_key
   unset bucket_name
   unset s3_prefix_path
-  unset newest_modified_date
   unset expired_delta_seconds
 
   # Reset aliases expandtion when the shell is not interactive.
