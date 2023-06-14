@@ -14,7 +14,6 @@ check_variables() {
 }
 
 function main() {
-  # TODO: uncomment `check_variables` line below:
   check_variables "bucket_name" "s3_prefix_path" "expired_delta_seconds" || exit 1
 
   # Get the newest file's mofidication date from S3 bucket.
