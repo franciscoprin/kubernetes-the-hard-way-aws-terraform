@@ -1,5 +1,5 @@
 
-FROM ubuntu:20.04
+FROM --platform=linux/amd64 ubuntu:22.04
 
 ARG HOST_GROUP_ID
 ARG HOST_USER_ID
@@ -65,7 +65,7 @@ RUN apt-get update && \
     rm terraform_${TF_VERSION}_linux_amd64.zip
 
 # Handle local user:
-RUN groupadd --gid=${HOST_GROUP_ID} ${HOST_USER_NAME}
+RUN groupadd --gid=${HOST_GROUP_ID} ${HOST_USER_NAME} || true
 RUN useradd \
     -d /home/${HOST_USER_NAME} \
     --uid=${HOST_USER_ID} \
