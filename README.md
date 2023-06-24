@@ -5,8 +5,13 @@ This repository contains Terraform configuration files to create a Kubernetes cl
 
 ```mermaid
 flowchart LR
+
     subgraph Border
         subgraph AWS["<i class='fab fa-aws' style='font-size:25px;margin-top:5px;color:#FF8C00;'></i>"]
+            subgraph VPC["VPC (10.1.0.0/16)\nkubernetes-the-hard-way"]
+            
+            end
+            
             iam-role["<img class='S3Icon' src='https://symbols.getvecta.com/stencil_23/20_iam-role.0c61dbd0ca.svg' width='40px' height='40px'/><p>k8s-nodes-role</p>"]
             s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i>"]
         end
