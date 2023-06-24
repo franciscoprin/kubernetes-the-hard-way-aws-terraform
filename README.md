@@ -10,7 +10,7 @@ flowchart LR
             iam-role["<img class='S3Icon' src='https://symbols.getvecta.com/stencil_23/20_iam-role.0c61dbd0ca.svg' width='40px' height='40px'/><p>k8s-nodes-role</p>"]
             s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i>"]
         end
-        s3-bucket ---|hello there\nhi| iam-role
+        s3-bucket ---|s3:GetObject\ns3:ListBucket| iam-role
     end
 
     %% Defining Class Styles
