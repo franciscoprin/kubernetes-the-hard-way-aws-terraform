@@ -1,0 +1,6 @@
+# EditorConfig is awesome: https://EditorConfig.org
+
+# Add new lines at the end of files
+[*]
+end_of_line = lf
+insert_final_newline = true
