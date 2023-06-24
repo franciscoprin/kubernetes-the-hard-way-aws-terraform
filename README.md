@@ -8,8 +8,9 @@ flowchart LR
 
     subgraph Border
         subgraph AWS["<i class='fab fa-aws' style='font-size:25px;margin-top:5px;color:#FF8C00;'></i>"]
-            subgraph VPC["VPC (10.1.0.0/16)\nkubernetes-the-hard-way"]
-            
+            subgraph VPC["VPC (10.1.0.0/16)"]
+                subgraph Subnet["Subnet (10.1.0.0/24)"]
+                end
             end
             
             iam-role["<img class='S3Icon' src='https://symbols.getvecta.com/stencil_23/20_iam-role.0c61dbd0ca.svg' width='40px' height='40px'/><p>k8s-nodes-role</p>"]
@@ -29,6 +30,8 @@ flowchart LR
     class Border Border;
     class AWS AWS;
     class s3-bucket S3Icon;
+
+    %% Common styles
 ```
 
 
