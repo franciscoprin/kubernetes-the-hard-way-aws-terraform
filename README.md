@@ -5,12 +5,46 @@ This repository contains Terraform configuration files to create a Kubernetes cl
 
 ```mermaid
 flowchart LR
+
     subgraph Border
-        subgraph AWS["<i class='fab fa-aws' style='font-size:25px;margin-top:5px;color:#FF8C00;'></i>"]
+        subgraph AWS["<i class='fab fa-aws' style='font-size:30px;margin-top:5px;color:#FF8C00;'></i>"]
+            subgraph RegionUE1["Region (us-east-1)"]
+                subgraph VPC["VPC (10.1.0.0/16)"]
+                    subgraph Subnet["Public Subnet (10.1.1.0/24)"]
+
+                        subgraph SecurityGroup["Security Group"]
+                            subgraph WorkerNodesCluster["Worker Nodes Cluster"]
+                                instance_1["EC2 instance\n(10.1.1.10)"]
+                                instance_2["EC2 instance\n(10.1.1.11)"]
+                                instance_3["EC2 instance\n(10.1.1.12)"]
+                            end
+
+                            network_lb["Network Load Balancer\nForward Port\n 433 -> 6433"]
+
+                            network_lb <---> |redirect| instance_1
+                            network_lb <---> |redirect| instance_2
+                            network_lb <---> |redirect| instance_3
+                        end
+                    end
+
+                    RouteTable["<img class='S3Icon' src='https://www.shareicon.net/data/2015/08/28/92249_copy_512x512.png' width='70px' height='50px'/><p>Router</p>"]
+
+                    igw["<i class='fas fa-globe' style='font-size:25px;margin-top:5px;color:#007bff;'></i>\nInternet Gateway"]
+
+                end
+            end
+
             iam-role["<img class='S3Icon' src='https://symbols.getvecta.com/stencil_23/20_iam-role.0c61dbd0ca.svg' width='40px' height='40px'/><p>k8s-nodes-role</p>"]
+
             s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i>"]
+
+            s3-bucket <---> |s3:GetObject\ns3:ListBucket| iam-role
+
+            Internet["<img class='S3Icon' src='https://cdn-icons-png.flaticon.com/512/6463/6463383.png' width='80px' height='80px'/><p>Bad Internet</p>"]
+
+            Subnet --->|outbound| RouteTable <---> igw <---> Internet
+            RouteTable --->|inbound| Subnet 
         end
-        s3-bucket ---|s3:GetObject\ns3:ListBucket| iam-role
     end
 
     %% Defining Class Styles
