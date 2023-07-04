@@ -36,15 +36,18 @@ flowchart LR
 
             iam-role["<img class='S3Icon' src='https://symbols.getvecta.com/stencil_23/20_iam-role.0c61dbd0ca.svg' width='40px' height='40px'/><p>k8s-nodes-role</p>"]
 
-            s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i>"]
+            s3-bucket["<img class='S3Icon' src='https://www.logicata.com/wp-content/uploads/2020/01/Amazon-Simple-Storage-Service-S3_Bucket-with-Objects_light-bg@4x.png' width='70px' height='70px'/><p>kubernetes-the-hard-way</p><i class='fa fa-folder' aria-hidden='true'> kube-certs/</i><br><i class='fa fa-folder' aria-hidden='true'> ssh-keys/</i>"]
 
             s3-bucket <---> |s3:GetObject\ns3:ListBucket| iam-role
 
-            Internet["<img class='S3Icon' src='https://cdn-icons-png.flaticon.com/512/6463/6463383.png' width='80px' height='80px'/><p>Bad Internet</p>"]
-
-            Subnet --->|outbound| RouteTable <---> igw <---> Internet
+            Subnet --->|outbound| RouteTable <---> igw
             RouteTable --->|inbound| Subnet 
         end
+
+    Internet["<img class='S3Icon' src='https://cdn-icons-png.flaticon.com/512/6463/6463383.png' width='80px' height='80px'/><p>Bad Internet</p>"] 
+ 
+    igw <---> Internet
+
     end
 
     %% Defining Class Styles
