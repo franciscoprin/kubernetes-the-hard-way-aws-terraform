@@ -12,10 +12,13 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.4.3"
     }
-
     shell = {
       source =  "scottwinkler/shell"
       version = "~> 1.7.10"
+    }
+    tls = {
+      source =  "hashicorp/tls"
+      version = "~> 4.0.4"
     }
   }
 
